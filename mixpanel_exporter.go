@@ -78,7 +78,12 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 				// Seconds since epoch to time.Time
 				formattedDataLine.Time = time.Unix(int64(v.(float64)), 0)
 			} else {
-				formattedDataLine.Properties[k] = v
+				switch k {
+				case "Pageview":
+					formattedDataLine.Properties["$pageview"] = v
+				default:
+					formattedDataLine.Properties[k] = v
+				}
 			}
 		}
 

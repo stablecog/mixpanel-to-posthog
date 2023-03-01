@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	"github.com/manifoldco/promptui"
+	"github.com/posthog/posthog-go"
 )
 
 func main() {
@@ -168,12 +169,16 @@ func main() {
 		posthogEndpoint = pR
 	}
 
-	// Create importer
-	importer, err := NewPosthogImporter(posthogApiKey, posthogPersonalApiKey, posthogEndpoint)
+	// Create posthog client
+	posthogClient, err := posthog.NewWithConfig(posthogApiKey, posthog.Config{
+		Endpoint:       posthogEndpoint,
+		PersonalApiKey: posthogPersonalApiKey,
+	})
 	if err != nil {
-		color.Red("\nEncountered an error while creating Posthog importer: %v", err)
+		color.Red("\nEncountered an error while creating Posthog client: %v", err)
 		os.Exit(1)
 	}
+	defer posthogClient.Close()
 
 	// ** Mixpanel Export ** //
 
@@ -195,15 +200,14 @@ func main() {
 	// ** Posthog Import ** //
 
 	color.Green("\nImporting data into Posthog")
-	s2 := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
-	s2.Start()
-	err = importer.Import(data)
+	s.Reverse()
+	s.Start()
+	err = PosthogImport(posthogClient, data)
 	if err != nil {
 		color.Red("\nEncountered an error while importing data into Posthog: %v", err)
 		os.Exit(1)
 	}
-	s2.Stop()
-	err = importer.Posthog.Close()
+	s.Stop()
 	if err != nil {
 		color.Red("\nEncountered an error while closing Posthog client: %v", err)
 		os.Exit(1)

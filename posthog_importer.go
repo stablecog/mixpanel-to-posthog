@@ -5,24 +5,7 @@ import (
 	"github.com/posthog/posthog-go"
 )
 
-type PosthogImport struct {
-	Posthog posthog.Client
-}
-
-func NewPosthogImporter(apiKey, personalKey, url string) (*PosthogImport, error) {
-	client, err := posthog.NewWithConfig(apiKey, posthog.Config{
-		Endpoint:       url,
-		PersonalApiKey: personalKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &PosthogImport{
-		Posthog: client,
-	}, nil
-}
-
-func (p *PosthogImport) Import(data []MixpanelDataLine) error {
+func PosthogImport(client posthog.Client, data []MixpanelDataLine) error {
 	for _, line := range data {
 		color.Cyan("Importing event: %s %s", line.Event, line.DistinctID)
 		// Construct properties
@@ -30,7 +13,7 @@ func (p *PosthogImport) Import(data []MixpanelDataLine) error {
 		for k, v := range line.Properties {
 			properties.Set(k, v)
 		}
-		err := p.Posthog.Enqueue(posthog.Capture{
+		err := client.Enqueue(posthog.Capture{
 			DistinctId: line.DistinctID,
 			Event:      line.Event,
 			Properties: properties,
