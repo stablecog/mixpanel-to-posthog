@@ -4,17 +4,20 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
+
+	"github.com/charmbracelet/log"
 )
 
 type Mixpanel struct {
-	APIUrl   string
-	Token    string
-	FromDate time.Time
-	ToDate   time.Time
-	Client   *http.Client
+	APIUrl    string
+	Token     string
+	FromDate  time.Time
+	ToDate    time.Time
+	ProjectID string
+	Client    *http.Client
 }
 
 func basicAuth(username, password string) string {
@@ -23,50 +26,80 @@ func basicAuth(username, password string) string {
 }
 
 // Create a new mixpanel client
-func NewExporter(apiUrl string, user string, password string, fromDate time.Time, toDate time.Time) *Mixpanel {
+func NewExporter(apiUrl string, user string, password string, projectId string, fromDate time.Time, toDate time.Time) *Mixpanel {
 	return &Mixpanel{
-		APIUrl:   apiUrl,
-		Token:    basicAuth(user, password),
-		FromDate: fromDate,
-		ToDate:   toDate,
-		Client:   http.DefaultClient,
+		APIUrl:    apiUrl,
+		Token:     basicAuth(user, password),
+		FromDate:  fromDate,
+		ToDate:    toDate,
+		ProjectID: projectId,
+		Client:    http.DefaultClient,
 	}
 }
 
-func (c *Mixpanel) Export() error {
+func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 	// Format times to yyyy-mm-dd
 	fromDate := c.FromDate.Format("2006-01-02")
 	toDate := c.ToDate.Format("2006-01-02")
-	url := c.APIUrl + fmt.Sprintf("/export?from_date=%s&to_date=%s", fromDate, toDate)
+	url := c.APIUrl + fmt.Sprintf("/export?from_date=%s&to_date=%s&project_id=%s&limit=2", fromDate, toDate, c.ProjectID)
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	request.Header.Set("Authorization", fmt.Sprintf("Basic %s", c.Token))
 	resp, err := c.Client.Do(request)
 	if err != nil {
-		return err
+		return nil, err
 	} else if resp.StatusCode != 200 {
-		return fmt.Errorf("status=%s; httpCode=%d Export failed", resp.Status, resp.StatusCode)
+		return nil, fmt.Errorf("status=%s; httpCode=%d Export failed", resp.Status, resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	// Custom decoder since they have a wonky format
+	dec := json.NewDecoder(resp.Body)
+	ret := []MixpanelDataLine{}
+
+	for {
+		var line MixpanelDataLineRaw
+		if err := dec.Decode(&line); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		formattedDataLine := MixpanelDataLine{}
+		formattedDataLine.Event = line.Event
+		formattedDataLine.Properties = make(map[string]interface{})
+		for k, v := range line.Properties {
+			if k == "distinct_id" {
+				formattedDataLine.DistinctID = v.(string)
+			} else if k == "time" {
+				// Seconds since epoch to time.Time
+				formattedDataLine.Time = time.Unix(int64(v.(float64)), 0)
+			} else {
+				formattedDataLine.Properties[k] = v
+			}
+		}
+
+		if formattedDataLine.DistinctID == "" || formattedDataLine.Time.IsZero() {
+			log.Info("Skipping event with no distinct_id or time", "event", formattedDataLine.Event)
+			continue
+		}
+		ret = append(ret, formattedDataLine)
 	}
 
-	type verboseResponse struct {
-		Error  string `json:"error"`
-		Status int    `json:"status"`
-	}
+	return ret, nil
+}
 
-	var jsonBody map[string]interface{}
-	json.Unmarshal(body, &jsonBody)
+type MixpanelDataLineRaw struct {
+	Event      string                 `json:"event"`
+	Properties map[string]interface{} `json:"properties"`
+}
 
-	// Print json as string
-	fmt.Println(jsonBody)
-
-	return nil
+type MixpanelDataLine struct {
+	Event      string                 `json:"event"`
+	DistinctID string                 `json:"distinct_id"`
+	Time       time.Time              `json:"time"`
+	Properties map[string]interface{} `json:"properties"`
 }
