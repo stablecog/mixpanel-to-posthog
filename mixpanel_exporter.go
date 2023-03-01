@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -124,4 +127,83 @@ type MixpanelDataLine struct {
 	DistinctID string                 `json:"distinct_id"`
 	Time       time.Time              `json:"time"`
 	Properties map[string]interface{} `json:"properties"`
+}
+
+func readCsvFile(filePath string) [][]string {
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal("Unable to read input file "+filePath, err)
+	}
+	defer f.Close()
+
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		log.Fatal("Unable to parse file as CSV for "+filePath, err)
+	}
+
+	return records
+}
+
+type CSVHeaderIndex struct {
+	index int
+	name  string
+}
+
+// Dont translate these properties
+const NOOP = "NOOP"
+
+func LoadMixpanelUsersFromCSVFile(csvFile string) ([]MixpanelUser, error) {
+	// read csv from string
+	records := readCsvFile(csvFile)
+	headers := records[0]
+	headerIndex := make(map[int]string)
+	for i, header := range headers {
+		if strings.HasPrefix(header, "$") {
+			switch header {
+			case "$mp_first_event_time":
+				headerIndex[i] = "NOOP"
+			case "$timezone":
+				headerIndex[i] = "$geoip_time_zone"
+			case "$region":
+				headerIndex[i] = "$geoip_subdivision_1_name"
+			case "$country_code":
+				headerIndex[i] = "$geoip_country_code"
+			case "$city":
+				headerIndex[i] = "$geoip_city_name"
+			case "$email":
+				headerIndex[i] = "email"
+			default:
+				headerIndex[i] = header
+			}
+		} else {
+			headerIndex[i] = header
+		}
+	}
+
+	ret := []MixpanelUser{}
+	for _, record := range records[1:] {
+		properties := make(map[string]interface{})
+		distinctId := ""
+		for i, value := range record {
+			if headerIndex[i] == "$distinct_id" {
+				distinctId = value
+				continue
+			}
+			if headerIndex[i] != NOOP {
+				properties[headerIndex[i]] = value
+			}
+		}
+		ret = append(ret, MixpanelUser{
+			DistinctID: distinctId,
+			Properties: properties,
+		})
+	}
+
+	return ret, nil
+}
+
+type MixpanelUser struct {
+	DistinctID string
+	Properties map[string]interface{}
 }

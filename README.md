@@ -49,11 +49,21 @@ Mixpanel could rate limit you, your system could run out of memory and crash.
 
 It's recommended to do smaller chunks at a time (dates are inclusive, so from_date=2023-03-01 and to_date=2023-03-01 will import 1 days worth of data)
 
-## Usage
+# Usage
 
 Download the latest [Release](https://github.com/stablecog/sc-mp-to-ph/releases) for your system.
 
 Simply run it with, `./migrator` or `./migrator.exe` if using windows.
+
+## Import Users
+
+The mixpanel Web UI allows exporting users as csv format. Select all columns, all users, get a .csv file.
+
+Run `./migrator -users-csv-file /path/to/users-export.csv` to load all users into mixpanel
+
+## Usage (Import Events)
+
+Just run without any parameters.
 
 ## Check us out
 

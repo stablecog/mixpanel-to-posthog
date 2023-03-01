@@ -26,3 +26,25 @@ func PosthogImport(client posthog.Client, data []MixpanelDataLine) error {
 	}
 	return nil
 }
+
+func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
+	for _, user := range users {
+		color.Cyan("Importing user: %s", user.DistinctID)
+		// Construct properties
+		properties := posthog.NewProperties()
+		for k, v := range user.Properties {
+			if v != "undefined" {
+				properties.Set(k, v)
+			}
+		}
+		err := client.Enqueue(posthog.Identify{
+			DistinctId: user.DistinctID,
+			Properties: properties,
+		})
+		if err != nil {
+			color.Red("\nError importing user: %s", user.DistinctID)
+			return err
+		}
+	}
+	return nil
+}

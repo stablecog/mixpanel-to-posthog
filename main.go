@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -16,12 +17,102 @@ import (
 
 var Version = "dev"
 
+func getPosthogClient() posthog.Client {
+	// ** Get Posthog credentials ** //
+	if os.Getenv("POSTHOG_API_KEY") == "" || os.Getenv("POSTHOG_ENDPOINT") == "" || os.Getenv("POSTHOG_PROJECT_KEY") == "" {
+		color.Cyan("\nPosthog Credentials")
+		color.Cyan("See the README for reference on what these are and how to get them.\n\n")
+	}
+
+	// If in env, don't ask
+	var posthogApiKey string
+	if os.Getenv("POSTHOG_PROJECT_KEY") != "" {
+		posthogApiKey = os.Getenv("POSTHOG_PROJECT_KEY")
+	} else {
+		posthogApiKeyPrompt := promptui.Prompt{
+			Label: "Enter Posthog Project API Key",
+			Mask:  '*',
+		}
+		pR, _ := posthogApiKeyPrompt.Run()
+		posthogApiKey = pR
+	}
+
+	var posthogPersonalApiKey string
+	if os.Getenv("POSTHOG_API_KEY") != "" {
+		posthogPersonalApiKey = os.Getenv("POSTHOG_API_KEY")
+	} else {
+		posthogApiKeyPrompt := promptui.Prompt{
+			Label: "Enter Posthog Personal API Key",
+			Mask:  '*',
+		}
+		pR, _ := posthogApiKeyPrompt.Run()
+		posthogPersonalApiKey = pR
+	}
+
+	// If in env, don't ask
+	var posthogEndpoint string
+	if os.Getenv("POSTHOG_ENDPOINT") != "" {
+		posthogEndpoint = os.Getenv("POSTHOG_ENDPOINT")
+	} else {
+		posthogApiKeyPrompt := promptui.Prompt{
+			Label: "Enter Posthog API Endpoint",
+			Validate: func(input string) error {
+				_, err := url.Parse(input)
+				return err
+			},
+		}
+		pR, _ := posthogApiKeyPrompt.Run()
+		posthogEndpoint = pR
+	}
+
+	// Create posthog client
+	posthogClient, err := posthog.NewWithConfig(posthogApiKey, posthog.Config{
+		Endpoint:       posthogEndpoint,
+		PersonalApiKey: posthogPersonalApiKey,
+	})
+	if err != nil {
+		color.Red("\nEncountered an error while creating Posthog client: %v", err)
+		os.Exit(1)
+	}
+	return posthogClient
+}
+
 func main() {
 	godotenv.Load(".env")
 
 	fmt.Println("------------------------------------")
 	color.Green("SC Mixpanel to Posthog Data Migrator")
 	fmt.Println("------------------------------------")
+
+	// They can optionally just identify users
+	csvFile := flag.String("users-csv-file", "", "Path to CSV file to import users")
+	flag.Parse()
+
+	if *csvFile != "" {
+		// See if file exists
+		if _, err := os.Stat(*csvFile); os.IsNotExist(err) {
+			color.Red("CSV %s file does not exist or cannot be read", *csvFile)
+			os.Exit(1)
+		}
+		// Import users
+		color.Cyan("Importing users from %s", *csvFile)
+		posthogClient := getPosthogClient()
+		defer posthogClient.Close()
+
+		// Load from MP
+		users, err := LoadMixpanelUsersFromCSVFile(*csvFile)
+		if err != nil {
+			color.Red("Error loading users from CSV file: %v", err)
+			os.Exit(1)
+		}
+		err = PosthogImportUsers(posthogClient, users)
+		if err != nil {
+			color.Red("Error importing users: %v", err)
+			os.Exit(1)
+		}
+		color.Green("Successfully imported %d users", len(users))
+		os.Exit(0)
+	}
 
 	// User inputs
 
@@ -124,62 +215,7 @@ func main() {
 	fromDt, _ := time.Parse("2006-01-02", fromDtResult)
 	toDt, _ := time.Parse("2006-01-02", toDtResult)
 
-	// ** Get Posthog credentials ** //
-	if os.Getenv("POSTHOG_API_KEY") == "" || os.Getenv("POSTHOG_ENDPOINT") == "" || os.Getenv("POSTHOG_PROJECT_KEY") == "" {
-		color.Cyan("\nPosthog Credentials")
-		color.Cyan("See the README for reference on what these are and how to get them.\n\n")
-	}
-
-	// If in env, don't ask
-	var posthogApiKey string
-	if os.Getenv("POSTHOG_PROJECT_KEY") != "" {
-		posthogApiKey = os.Getenv("POSTHOG_PROJECT_KEY")
-	} else {
-		posthogApiKeyPrompt := promptui.Prompt{
-			Label: "Enter Posthog Project API Key",
-			Mask:  '*',
-		}
-		pR, _ := posthogApiKeyPrompt.Run()
-		posthogApiKey = pR
-	}
-
-	var posthogPersonalApiKey string
-	if os.Getenv("POSTHOG_API_KEY") != "" {
-		posthogPersonalApiKey = os.Getenv("POSTHOG_API_KEY")
-	} else {
-		posthogApiKeyPrompt := promptui.Prompt{
-			Label: "Enter Posthog Personal API Key",
-			Mask:  '*',
-		}
-		pR, _ := posthogApiKeyPrompt.Run()
-		posthogPersonalApiKey = pR
-	}
-
-	// If in env, don't ask
-	var posthogEndpoint string
-	if os.Getenv("POSTHOG_ENDPOINT") != "" {
-		posthogEndpoint = os.Getenv("POSTHOG_ENDPOINT")
-	} else {
-		posthogApiKeyPrompt := promptui.Prompt{
-			Label: "Enter Posthog API Endpoint",
-			Validate: func(input string) error {
-				_, err := url.Parse(input)
-				return err
-			},
-		}
-		pR, _ := posthogApiKeyPrompt.Run()
-		posthogEndpoint = pR
-	}
-
-	// Create posthog client
-	posthogClient, err := posthog.NewWithConfig(posthogApiKey, posthog.Config{
-		Endpoint:       posthogEndpoint,
-		PersonalApiKey: posthogPersonalApiKey,
-	})
-	if err != nil {
-		color.Red("\nEncountered an error while creating Posthog client: %v", err)
-		os.Exit(1)
-	}
+	posthogClient := getPosthogClient()
 	defer posthogClient.Close()
 
 	// ** Mixpanel Export ** //
