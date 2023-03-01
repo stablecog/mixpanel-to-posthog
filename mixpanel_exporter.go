@@ -41,7 +41,7 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 	// Format times to yyyy-mm-dd
 	fromDate := c.FromDate.Format("2006-01-02")
 	toDate := c.ToDate.Format("2006-01-02")
-	url := c.APIUrl + fmt.Sprintf("/export?from_date=%s&to_date=%s&project_id=%s&limit=2", fromDate, toDate, c.ProjectID)
+	url := c.APIUrl + fmt.Sprintf("/export?from_date=%s&to_date=%s&project_id=%s", fromDate, toDate, c.ProjectID)
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
