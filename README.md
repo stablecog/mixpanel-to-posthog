@@ -2,6 +2,12 @@
 
 A tool for easily migrating data from [Mixpanel](https://mixpanel.com/) to [Posthog](https://posthog.com) (self-hosted or cloud)
 
+## Disclaimer
+
+This is **NOT an official tool**. We are not affiliated with Posthog, Mixpanel, or any other project.
+
+However, if you are looking to migrate from Mixpanel to Posthog like we were - we hope you find this tool useful.
+
 ## Setup
 
 ### Mixpanel
