@@ -84,8 +84,8 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 				formattedDataLine.Time = time.Unix(int64(v.(float64)), 0)
 			} else {
 				switch k {
-				case "Pageview":
-					formattedDataLine.Properties["$pageview"] = v
+				// Do nothing with these
+				case "$mp_api_endpoint", "$mp_api_timestamp_ms", "mp_lib", "mp_processing_time_ms":
 				default:
 					formattedDataLine.Properties[k] = v
 				}
