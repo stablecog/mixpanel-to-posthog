@@ -84,7 +84,8 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 
 		// Parse properties
 		formattedDataLine.Properties = make(map[string]interface{})
-		formattedDataLine.Properties["$lib_version"] = fmt.Sprintf("stablecog/mp-to-ph@%s", c.Version)
+		formattedDataLine.Properties["$lib"] = "sc-mp-importer"
+		formattedDataLine.Properties["$lib_version"] = c.Version
 
 		for k, v := range line.Properties {
 			if k == "distinct_id" {
@@ -94,10 +95,8 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 				formattedDataLine.Time = time.Unix(int64(v.(float64)), 0)
 			} else {
 				switch k {
-				case "mp_lib":
-					formattedDataLine.Properties["$lib"] = v
 				// Do nothing with these
-				case "$mp_api_endpoint", "$mp_api_timestamp_ms", "mp_processing_time_ms":
+				case "$mp_api_endpoint", "$mp_api_timestamp_ms", "mp_lib", "mp_processing_time_ms":
 				default:
 					formattedDataLine.Properties[k] = v
 				}
