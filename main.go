@@ -14,6 +14,8 @@ import (
 	"github.com/posthog/posthog-go"
 )
 
+var Version = "dev"
+
 func main() {
 	godotenv.Load(".env")
 
@@ -183,7 +185,7 @@ func main() {
 	// ** Mixpanel Export ** //
 
 	// Create mixpanel exporter
-	exporter := NewExporter(apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
+	exporter := NewExporter(Version, apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
 
 	color.Blue("Exporting data from Mixpanel")
 	s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
@@ -212,6 +214,10 @@ func main() {
 		color.Red("\nEncountered an error while closing Posthog client: %v", err)
 		os.Exit(1)
 	}
+
+	color.Green("Success!")
+	color.Green("Imported %d events into Posthog", len(data))
+	color.Green("It may take awhile for all of these events to show up in Posthog.")
 
 	os.Exit(0)
 }

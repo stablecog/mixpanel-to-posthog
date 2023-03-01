@@ -18,6 +18,7 @@ type Mixpanel struct {
 	ToDate    time.Time
 	ProjectID string
 	Client    *http.Client
+	Version   string
 }
 
 func basicAuth(username, password string) string {
@@ -26,8 +27,9 @@ func basicAuth(username, password string) string {
 }
 
 // Create a new mixpanel client
-func NewExporter(apiUrl string, user string, password string, projectId string, fromDate time.Time, toDate time.Time) *Mixpanel {
+func NewExporter(version string, apiUrl string, user string, password string, projectId string, fromDate time.Time, toDate time.Time) *Mixpanel {
 	return &Mixpanel{
+		Version:   version,
 		APIUrl:    apiUrl,
 		Token:     basicAuth(user, password),
 		FromDate:  fromDate,
@@ -68,14 +70,22 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 			}
 			return nil, err
 		}
+
+		// Format the data
 		formattedDataLine := MixpanelDataLine{}
+
+		// Some events have internal names in posthog
 		switch line.Event {
 		case "Pageview":
 			formattedDataLine.Event = "$pageview"
 		default:
 			formattedDataLine.Event = line.Event
 		}
+
+		// Parse properties
 		formattedDataLine.Properties = make(map[string]interface{})
+		formattedDataLine.Properties["$lib_version"] = fmt.Sprintf("stablecog/mp-to-ph@%s", c.Version)
+
 		for k, v := range line.Properties {
 			if k == "distinct_id" {
 				formattedDataLine.DistinctID = v.(string)
@@ -84,8 +94,10 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 				formattedDataLine.Time = time.Unix(int64(v.(float64)), 0)
 			} else {
 				switch k {
+				case "mp_lib":
+					formattedDataLine.Properties["$lib"] = v
 				// Do nothing with these
-				case "$mp_api_endpoint", "$mp_api_timestamp_ms", "mp_lib", "mp_processing_time_ms":
+				case "$mp_api_endpoint", "$mp_api_timestamp_ms", "mp_processing_time_ms":
 				default:
 					formattedDataLine.Properties[k] = v
 				}
