@@ -155,7 +155,7 @@ func main() {
 	// If in env, don't ask
 	var posthogEndpoint string
 	if os.Getenv("POSTHOG_ENDPOINT") != "" {
-		posthogApiKey = os.Getenv("POSTHOG_API_KEY")
+		posthogEndpoint = os.Getenv("POSTHOG_ENDPOINT")
 	} else {
 		posthogApiKeyPrompt := promptui.Prompt{
 			Label: "Enter Posthog API Endpoint",
@@ -165,7 +165,7 @@ func main() {
 			},
 		}
 		pR, _ := posthogApiKeyPrompt.Run()
-		posthogApiKey = pR
+		posthogEndpoint = pR
 	}
 
 	// Create importer
@@ -192,17 +192,17 @@ func main() {
 	s.Stop()
 	color.Green("Exported %d events from Mixpanel", len(data))
 
-	// ** Posthog Import **//
+	// ** Posthog Import ** //
 
 	color.Green("\nImporting data into Posthog")
-	s = spinner.New(spinner.CharSets[43], 100*time.Millisecond)
-	s.Start()
+	s2 := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
+	s2.Start()
 	err = importer.Import(data)
 	if err != nil {
 		color.Red("\nEncountered an error while importing data into Posthog: %v", err)
 		os.Exit(1)
 	}
-	s.Stop()
+	s2.Stop()
 	err = importer.Posthog.Close()
 	if err != nil {
 		color.Red("\nEncountered an error while closing Posthog client: %v", err)
