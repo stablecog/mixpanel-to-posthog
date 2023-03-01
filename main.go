@@ -15,7 +15,7 @@ import (
 	"github.com/posthog/posthog-go"
 )
 
-var Version = "dev"
+var version = "dev"
 
 func getPosthogClient() posthog.Client {
 	// ** Get Posthog credentials ** //
@@ -86,11 +86,11 @@ func main() {
 
 	// They can optionally just identify users
 	csvFile := flag.String("users-csv-file", "", "Path to CSV file to import users")
-	version := flag.Bool("version", false, "Print version and exit")
+	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
 
-	if *version {
-		fmt.Printf("\nVersion: %v\n", color.GreenString(Version))
+	if *showVersion {
+		fmt.Printf("\nVersion: %v\n", color.GreenString(version))
 		os.Exit(0)
 	}
 
@@ -227,7 +227,7 @@ func main() {
 	// ** Mixpanel Export ** //
 
 	// Create mixpanel exporter
-	exporter := NewExporter(Version, apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
+	exporter := NewExporter(version, apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
 
 	color.Blue("Exporting data from Mixpanel")
 	s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
