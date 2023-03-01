@@ -86,7 +86,13 @@ func main() {
 
 	// They can optionally just identify users
 	csvFile := flag.String("users-csv-file", "", "Path to CSV file to import users")
+	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("\nVersion: %v\n", color.GreenString(Version))
+		os.Exit(0)
+	}
 
 	if *csvFile != "" {
 		// See if file exists
