@@ -69,7 +69,12 @@ func (c *Mixpanel) Export() ([]MixpanelDataLine, error) {
 			return nil, err
 		}
 		formattedDataLine := MixpanelDataLine{}
-		formattedDataLine.Event = line.Event
+		switch line.Event {
+		case "Pageview":
+			formattedDataLine.Event = "$pageview"
+		default:
+			formattedDataLine.Event = line.Event
+		}
 		formattedDataLine.Properties = make(map[string]interface{})
 		for k, v := range line.Properties {
 			if k == "distinct_id" {
