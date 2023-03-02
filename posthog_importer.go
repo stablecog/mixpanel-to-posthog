@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/posthog/posthog-go"
 )
@@ -24,6 +26,8 @@ func PosthogImport(client posthog.Client, data []MixpanelDataLine) error {
 			color.Red("\nError importing event: %s", line.Event)
 			return err
 		}
+		// Sleep 500ms in between to avoid overloading the API
+		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
 }
@@ -48,6 +52,8 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 			color.Red("\nError importing user: %s", user.DistinctID)
 			return err
 		}
+		// Sleep 500ms in between to avoid overloading the API
+		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
 }

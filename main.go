@@ -117,7 +117,11 @@ func main() {
 			os.Exit(1)
 		}
 		color.Green("Successfully imported %d users", len(users))
-		os.Exit(0)
+		// Block until user presses control C
+		color.Red("It's recommended to wait several minutes for posthog to process the users.")
+		color.Red("Once you see all users in posthog console, you can exit this program.")
+		color.Red("Press control C to exit...")
+		select {}
 	}
 
 	// User inputs
@@ -259,7 +263,10 @@ func main() {
 
 	color.Green("Success!")
 	color.Green("Imported %d events into Posthog", len(data))
-	color.Green("It may take awhile for all of these events to show up in Posthog.")
 
-	os.Exit(0)
+	// Block until user presses control C
+	color.Red("It's recommended to wait several minutes for posthog to process the events.")
+	color.Red("Once you see all events in posthog, you can exit this program.")
+	color.Red("Press control C to exit...")
+	select {}
 }
