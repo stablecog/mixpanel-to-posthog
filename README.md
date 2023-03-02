@@ -63,12 +63,9 @@ Download the latest [Release](https://github.com/stablecog/sc-mp-to-ph/releases)
 
 The best way we found to migrate data is to do the following.
 
-1. Select all columns from mixpanel users
-2. Export as csv
-3. Import the users
-4. Disable GeoIP app from Posthog (if enabled)
-5. Migrate events
-6. Re-enable GeoIP app on Posthog (if desired)
+1. In Mixpanel UI, export all users and columns as CSV
+2. Import the users (see below)
+3. Import events (see below)
 
 ## Import Users
 
@@ -76,7 +73,7 @@ The mixpanel Web UI allows exporting users as csv format. Select all columns, al
 
 Run `./mixpanel-to-posthog -users-csv-file /path/to/users-export.csv` to load all users into mixpanel
 
-## Usage (Import Events)
+## Import Events
 
 Just run without any parameters:
 
