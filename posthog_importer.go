@@ -9,7 +9,6 @@ import (
 
 func PosthogImport(client posthog.Client, data []MixpanelDataLine) error {
 	for _, line := range data {
-		color.Cyan("Importing event: %s %s", line.Event, line.DistinctID)
 		// Construct properties
 		properties := posthog.NewProperties()
 		for k, v := range line.Properties {
@@ -26,15 +25,14 @@ func PosthogImport(client posthog.Client, data []MixpanelDataLine) error {
 			color.Red("\nError importing event: %s", line.Event)
 			return err
 		}
-		// Sleep 500ms in between to avoid overloading the API
-		time.Sleep(500 * time.Millisecond)
+		// Sleep in between to avoid overloading the API
+		time.Sleep(10 * time.Millisecond)
 	}
 	return nil
 }
 
 func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 	for _, user := range users {
-		color.Cyan("Importing user: %s", user.DistinctID)
 		// Construct properties
 		properties := posthog.NewProperties()
 		for k, v := range user.Properties {
@@ -52,8 +50,8 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 			color.Red("\nError importing user: %s", user.DistinctID)
 			return err
 		}
-		// Sleep 500ms in between to avoid overloading the API
-		time.Sleep(500 * time.Millisecond)
+		// Sleep in between to avoid overloading the API
+		time.Sleep(10 * time.Millisecond)
 	}
 	return nil
 }

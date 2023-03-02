@@ -101,7 +101,9 @@ func main() {
 			os.Exit(1)
 		}
 		// Import users
-		color.Cyan("Importing users from %s", *csvFile)
+		color.Cyan("Importing users from %s (This may take awhile)", *csvFile)
+		s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
+		s.Start()
 		posthogClient := getPosthogClient()
 		defer posthogClient.Close()
 
@@ -116,6 +118,7 @@ func main() {
 			color.Red("Error importing users: %v", err)
 			os.Exit(1)
 		}
+		s.Stop()
 		color.Green("Successfully imported %d users", len(users))
 		// Block until user presses control C
 		color.Red("It's recommended to wait several minutes for posthog to process the users.")
@@ -233,7 +236,7 @@ func main() {
 	// Create mixpanel exporter
 	exporter := NewExporter(version, apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
 
-	color.Blue("Exporting data from Mixpanel")
+	color.Blue("Exporting data from Mixpanel (This may take awhile)")
 	s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
 	s.Reverse()
 	s.Start()
@@ -247,7 +250,7 @@ func main() {
 
 	// ** Posthog Import ** //
 
-	color.Green("\nImporting data into Posthog")
+	color.Green("\nImporting data into Posthog (This may take awhile)")
 	s.Reverse()
 	s.Start()
 	err = PosthogImport(posthogClient, data)
