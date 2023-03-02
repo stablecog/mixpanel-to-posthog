@@ -63,21 +63,21 @@ Download the latest [Release](https://github.com/stablecog/sc-mp-to-ph/releases)
 
 The best way we found to migrate data is to do the following.
 
-1. In Mixpanel UI, export all users and columns as CSV
-2. Import the users (see below)
-3. Import events (see below)
+1. Import events (see below)
+2. In Mixpanel UI, export all users and columns as CSV
+3. Import the users (see below)
 
-## Import Users
-
-The mixpanel Web UI allows exporting users as csv format. Select all columns, all users, get a .csv file.
-
-Run `./mixpanel-to-posthog -users-csv-file /path/to/users-export.csv` to load all users into mixpanel
-
-## Import Events
+## (Step 1) Import Events
 
 Just run without any parameters:
 
 `./mixpanel-to-posthog` or `./mixpanel-to-posthog.exe` if using windows.
+
+## (Step 2) Import Users
+
+The mixpanel Web UI allows exporting users as csv format. Select all columns, all users, get a .csv file.
+
+Run `./mixpanel-to-posthog -users-csv-file /path/to/users-export.csv` to load all users into mixpanel
 
 ## Check us out
 
