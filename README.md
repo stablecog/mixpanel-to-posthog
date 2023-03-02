@@ -4,7 +4,7 @@ A tool for easily migrating data from [Mixpanel](https://mixpanel.com/) to [Post
 
 ## Disclaimer
 
-This is **NOT an official tool**. We are not affiliated with Posthog, Mixpanel, or any other project.
+This is **NOT an official tool**. We are not affiliated with Posthog or Mixpanel
 
 However, if you are looking to migrate from Mixpanel to Posthog like we were - we hope you find this tool useful.
 
@@ -58,8 +58,6 @@ It's recommended to do smaller chunks at a time (dates are inclusive, so from_da
 # Usage
 
 Download the latest [Release](https://github.com/stablecog/sc-mp-to-ph/releases) for your system.
-
-Simply run it with, `./mixpanel-to-posthog` or `./mixpanel-to-posthog.exe` if using windows.
 
 ## Recommended flow
 
