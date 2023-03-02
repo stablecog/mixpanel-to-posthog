@@ -17,6 +17,9 @@ import (
 
 var version = "dev"
 
+// Delay between posthog queue events to avoid overloading the API
+const DELAY_MS = 5
+
 func getPosthogClient() posthog.Client {
 	// ** Get Posthog credentials ** //
 	if os.Getenv("POSTHOG_API_KEY") == "" || os.Getenv("POSTHOG_ENDPOINT") == "" || os.Getenv("POSTHOG_PROJECT_KEY") == "" {
@@ -100,19 +103,23 @@ func main() {
 			color.Red("CSV %s file does not exist or cannot be read", *csvFile)
 			os.Exit(1)
 		}
-		// Import users
-		color.Cyan("Importing users from %s (This may take awhile)", *csvFile)
-		s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
-		s.Start()
-		posthogClient := getPosthogClient()
-		defer posthogClient.Close()
-
 		// Load from MP
 		users, err := LoadMixpanelUsersFromCSVFile(*csvFile)
 		if err != nil {
 			color.Red("Error loading users from CSV file: %v", err)
 			os.Exit(1)
 		}
+
+		// Import users
+		// Calculate duration
+		totalMs := DELAY_MS * len(users)
+		totalDuration := time.Duration(totalMs) * time.Millisecond
+		color.Cyan("Importing users from %s (This will take approximately %d minutes, the current time is %s)", *csvFile, int(totalDuration.Minutes()), time.Now().Format("15:04:05"))
+		s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
+		s.Start()
+		posthogClient := getPosthogClient()
+		defer posthogClient.Close()
+
 		err = PosthogImportUsers(posthogClient, users)
 		if err != nil {
 			color.Red("Error importing users: %v", err)
@@ -235,7 +242,6 @@ func main() {
 
 	// Create mixpanel exporter
 	exporter := NewExporter(version, apiUrlResult, serviceUsernameResult, servicePasswordResult, projectIdResult, fromDt, toDt)
-
 	color.Blue("Exporting data from Mixpanel (This may take awhile)")
 	s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)
 	s.Reverse()
@@ -250,7 +256,9 @@ func main() {
 
 	// ** Posthog Import ** //
 
-	color.Green("\nImporting data into Posthog (This may take awhile)")
+	totalMs := DELAY_MS * len(data)
+	totalDuration := time.Duration(totalMs) * time.Millisecond
+	color.Green("\nImporting data into Posthog (This will take approximately %s, the current time is %s)", totalDuration.String(), time.Now().Format("15:04:05"))
 	s.Reverse()
 	s.Start()
 	err = PosthogImport(posthogClient, data)
