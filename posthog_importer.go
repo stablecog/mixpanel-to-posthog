@@ -38,6 +38,8 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 				properties.Set(k, v)
 			}
 		}
+		properties.Set("$geoip_disable", true)
+		properties.Set("$lib", "mixpanel-importer")
 		err := client.Enqueue(posthog.Identify{
 			DistinctId: user.DistinctID,
 			Properties: properties,
