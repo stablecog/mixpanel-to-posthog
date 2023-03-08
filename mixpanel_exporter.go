@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
+	"github.com/google/uuid"
 )
 
 type Mixpanel struct {
@@ -200,7 +201,47 @@ func LoadMixpanelUsersFromCSVFile(csvFile string) ([]MixpanelUser, error) {
 		})
 	}
 
-	return ret, nil
+	return MergeMixpanelUsers(ret), nil
+}
+
+// We need to do a merge to find valid uuids for emails and replace them
+// Some mixpanel IDs are not valid uuidv4
+func MergeMixpanelUsers(users []MixpanelUser) []MixpanelUser {
+	// Find users with invalid uuids
+	invalidIdEmailMap := make(map[string]string)
+
+	// Loop users
+	for _, user := range users {
+		// If this uuid is valid
+		if _, err := uuid.Parse(user.DistinctID); err == nil {
+			// Get email
+			email, ok := user.Properties["email"]
+			if !ok {
+				continue
+			}
+			email, ok = email.(string)
+			if !ok {
+				continue
+			}
+			// Map email to valid UUID
+			invalidIdEmailMap[email.(string)] = user.DistinctID
+		}
+	}
+
+	// Replace all IDs for the valid one
+	for i, user := range users {
+		// If user has an email
+		if email, ok := user.Properties["email"]; ok {
+			// If we have a valid ID for this email
+			if validId, ok := invalidIdEmailMap[email.(string)]; ok {
+				if _, err := uuid.Parse(users[i].DistinctID); err != nil {
+					log.Info("Replacing invalid ID with valid one", "invalid", user.DistinctID, "valid", validId)
+					users[i].DistinctID = validId
+				}
+			}
+		}
+	}
+	return users
 }
 
 type MixpanelUser struct {

@@ -63,9 +63,11 @@ Download the latest [Release](https://github.com/stablecog/sc-mp-to-ph/releases)
 
 The best way we found to migrate data is to do the following.
 
-1. Import events (see below)
-2. In Mixpanel UI, export all users and columns as CSV
-3. Import the users (see below)
+1. Disable GeoIP app (if enabled)
+2. Import events (see below)
+3. In Mixpanel UI, export all users and columns as CSV
+4. Import the users (see below)
+5. Enable GeoIP app (if enabled)
 
 ## (Step 1) Import Events
 

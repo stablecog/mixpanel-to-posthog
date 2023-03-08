@@ -35,7 +35,16 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 	for _, user := range users {
 		// Construct properties
 		properties := posthog.NewProperties()
+		ts := time.Now()
 		for k, v := range user.Properties {
+			if k == "$last_seen" {
+				// Parse date 2022-12-29T12:49:16"
+				t, err := time.Parse("2006-01-02T15:04:05", v.(string))
+				if err == nil {
+					ts = t
+				}
+				continue
+			}
 			if v != "undefined" {
 				properties.Set(k, v)
 			}
@@ -43,6 +52,7 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 		properties.Set("$geoip_disable", true)
 		properties.Set("$lib", "mixpanel-importer")
 		err := client.Enqueue(posthog.Identify{
+			Timestamp:  ts,
 			DistinctId: user.DistinctID,
 			Properties: properties,
 		})
