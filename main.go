@@ -18,7 +18,7 @@ import (
 var version = "dev"
 
 // Delay between posthog queue events to avoid overloading the API
-const DELAY_MS = 5
+const DELAY_MS = 1
 
 func getPosthogClient() posthog.Client {
 	// ** Get Posthog credentials ** //
