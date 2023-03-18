@@ -112,7 +112,7 @@ func main() {
 
 		// Import users
 		// Calculate duration
-		totalMs := DELAY_MS * len(users)
+		totalMs := DELAY_MS * 5 * len(users)
 		totalDuration := time.Duration(totalMs) * time.Millisecond
 		color.Cyan("Importing users from %s (This will take approximately %d minutes, the current time is %s)", *csvFile, int(totalDuration.Minutes()), time.Now().Format("15:04:05"))
 		s := spinner.New(spinner.CharSets[43], 100*time.Millisecond)

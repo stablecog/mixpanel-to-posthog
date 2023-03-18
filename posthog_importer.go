@@ -61,7 +61,7 @@ func PosthogImportUsers(client posthog.Client, users []MixpanelUser) error {
 			return err
 		}
 		// Sleep in between to avoid overloading the API
-		time.Sleep(DELAY_MS * time.Millisecond)
+		time.Sleep(DELAY_MS * 5 * time.Millisecond)
 	}
 	return nil
 }
