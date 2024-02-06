@@ -148,7 +148,7 @@ func main() {
 		apiUrlResult = os.Getenv("MIXPANEL_API_URL")
 	} else {
 		apiUrlPrompt := promptui.Prompt{
-			Label:     "Enter Mixpanel API URL",
+			Label:     "Enter Mixpanel API URL (for EU, use the EU-specific URL):",
 			AllowEdit: false,
 			Default:   "https://data.mixpanel.com/api/2.0",
 			Validate: func(input string) error {
